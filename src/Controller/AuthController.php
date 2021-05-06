@@ -41,14 +41,4 @@ class AuthController extends ApiController
         return $this->respondWithSuccess(sprintf('User %s successfully created', $user->getUsername()));
     }
 
-    /**
-     * @param JWTTokenManagerInterface $JWTManager
-     * @return JsonResponse
-     * @Route("/api/login_check", name="api_login_check", methods={"POST"})
-     */
-    public function getTokenUser(UserInterface $user,JWTTokenManagerInterface $JWTManager)
-    {
-        return new JsonResponse(['token' => $JWTManager->create($user)]);
-    }
-
 }

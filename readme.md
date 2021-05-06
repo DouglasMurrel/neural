@@ -1,28 +1,49 @@
 Установка системы
 
-1. Клонировать систему из репозитория `https://github.com/DouglasMurrel/neural.git`
-Скопировать `.env` в `.env.local` и в нем настроить параметры базы данных и почты.
-2. Выполнить `composer install` и настроить веб-сервер, чтобы его корень соответствовал директории `public` проекта
-3. Создать базу данных, затем создать в ней таблицы с помощью миграции: `php bin/console doctrine:migrations:migrate`
-4. Создать рейсы, на которые будут бронироваться билеты. Это делается консольной командой `php bin/console flight:fill <id>`, где `<id>` - id рейса. Если рейс уже существует, будет выдана ошибка.
+1. Клонировать систему из репозитория `https://github.com/DouglasMurrel/localhost.git`
+2. Выполнить `php bin/console lexik:jwt:generate-keypair`- таким образом будет сгенерирована пара файлов сертификата
+3. Скопировать `.env` в `.env.local` и в нем настроить параметры базы данных и почты.
+4. Выполнить `composer install` и настроить веб-сервер, чтобы его корень соответствовал директории `public` проекта (для простоты настройки в проекте присутствует файл .htaccess для Apache)
+5. Создать базу данных, затем создать в ней таблицы с помощью миграции: `php bin/console doctrine:migrations:migrate`
+6. Создать рейсы, на которые будут бронироваться билеты. Это делается консольной командой `php bin/console flight:fill <id>`, где `<id>` - id рейса. Если рейс уже существует, будет выдана ошибка.
 При этом в таблицу будут вставлены строки, соответствующие каждому месту. Я решил, что такая модель наиболее выгодна с точки зрения производительности, поскольку при выполнении определенных команд придется искать первое незанятое место в рейсе, и это наиболее удобно делать, если информация обо всех местах уже загружена в БД.
-5. Зарегистровать пользователей системы. Это делается отправкой на адрес `https://servername/register` POST-запроса с телом
+7. Зарегистровать пользователей системы. Это делается отправкой на адрес `https://servername/register` POST-запроса с телом
 ```
 {"email":"<email>","password":"<password>"}
+```
+Например:
+```
+curl -X POST -H "Content-Type: application/json" http://localhost/register -d "{\"email\":\"test@test.ru",\"password\":\"yourpassword\"}"
 ```
 Здесь `email` - реальный адрес пользователя, а `password` - пароль, который будет использоваться для выполнения команд.
 
 В дальнейшем, когда пойдет речь об отправке запроса к api, я буду писать только часть url, не включающую имя сервера. То есть, например, если написан url `/api/booking`, то имеется в виду, что запрос должен быть отправлен на `https://servername/api/booking`.
 
-Замечу, что мне пока что не удалось штатным образом настроить аутентификацию через api методом Bearer с применением JWT-токена - рецепты, найденные в интернете, не сработали. Поэтому аутентификация в проекте призводится прямо в методах контроллера.
+Для выполнения запросов нужно получить токен. Это делается путем отправки POST-запроса на адрес `/api/login_check`. В запросе обязательно должен быть заголовок `Content-Type: application/json`, а тело запроса должно быть таким же, как при регистрации, с заменой названия поля `email` на `username`: `{"username":"<email>","password":"<password>"}`.
 
-Каждый запрос к api должен быть отправлен методом POST и содержать в теле такой же json-объект, который использовался для регистрации пользователя:
+Например:
 ```
-{"email":"<email>","password":"<password>"}
+curl -X POST -H "Content-Type: application/json" http://localhost/api/login_check -d "{\"username\":\"test@test.ru",\"password\":\"yourpassword\"}"
 ```
-Если эти параметры указаны неверно, будет возвращено сообщение об ошибке аутентификации.
+Вы должны получить результат в таком виде:
+```
+{"token":"<token>"}
+```
+где `<token>` - это как раз нужный вам токен. Срок его жизни равен 1 часу, затем нужно снова аутентифицироваться.
 
-Методы отличаются адресом, на который отправляются.
+Для применения методов API вы должны отправить запрос на определенный адрес. У каждого запроса должны быть заголовки
+```
+Content-Type: application/json
+Authorization: Bearer <token>
+```
+где `<token>` - полученный вами токен.
+
+Например:
+```
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2MjAzMTcxNTYsImV4cCI6MTYyMDMyMDc1Niwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInVzZXJuYW1lIjoibXVycmVsQHlhbmRleC5ydSJ9.ZR3QsYH57sK8NxRn-UEOuLhyHT0o8d42W1wNFakW85vURaAC9n-XRTgl8Skm7bSRIuO-AiJSCLTpwHOlGoMqTLbES8DN-43s2bn8hkG_2iqFUZ8MTJO_HAGz47BJBRVoaHpeXhCuF648lmWg1nMgiNEDo9lzUT_SJJ-xVfSu9qQcApeYr1cqLITs1m8Sg7LrSk-qKWc5YQigAZgky4an-zPKC7v0R8C36l4eI22ZhNvsVjQs9cDh5IHP5phqCKK7jaHh60vkWMZWaE2j4XdBtaoZTpNVTvAicxIkjLxyiYrTBT2nmFDP1y6sPXIDkmzK1TWE_RdE17KqqgeH3UcTyA" http://localhost/api/booking/1
+```
+
+Методы отличаются только адресом, на который отправляются.
 
 1. `/api/booking/{flightId}`
 

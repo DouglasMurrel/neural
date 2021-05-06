@@ -22,34 +22,10 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * Class BookingController
  * @package App\Controller
- * @Route("/api", name="booking_api_")
  */
 class BookingController extends ApiController
 {
     const SECRET_KEY = 'a1b2c3d4e5f6a1b2c3d4e5f6';
-
-    private $user;
-    private $validUser = false;
-
-    protected function clientAuth(UserRepository $userRepository, UserPasswordEncoderInterface $passwordEncoder)
-    {
-        $request = Request::createFromGlobals();
-        $request = $this->transformJsonBody($request);
-        $password = $request->get('password');
-        $email = $request->get('email');
-
-        /** @var User $user */
-        $user = $userRepository->findOneBy(['email'=>$email]);
-        if(!$user){
-            return null;
-        }
-        $isValid = $passwordEncoder->isPasswordValid($user, $password);
-        if(!$isValid){
-            return null;
-        }
-        $this->user = $user;
-        $this->validUser = true;
-    }
 
     /**
      * Бронирует билет на первое свободное место данного рейса
@@ -60,7 +36,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/booking/{flightId}", name="book_add", methods={"POST"})
+     * @Route("/api/booking/{flightId}", name="booking_api_book_add", methods={"POST"})
      */
     public function addBooking(BookingRepository $bookingRepository,
                                UserRepository $userRepository,
@@ -69,16 +45,13 @@ class BookingController extends ApiController
                                int $flightId
     ){
         try {
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
             $booking = $bookingRepository->find($firstVacantSeatId);
             if (!$booking) {
                 return $this->respondValidationError('All seats are already booked');
             }
-            $booking->setUser($this->user)->setStatus(Booking::STATUS_BOOKED);
+            $user = $this->getUser();
+            $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
             $errors = $validator->validate($booking);
             if (count($errors) > 0) {
                 return $this->respondValidationError((string)$errors);
@@ -101,7 +74,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/booking/{flightId}/{seatId}", name="book_add_certain", methods={"POST"})
+     * @Route("/api/booking/{flightId}/{seatId}", name="booking_api_book_add_certain", methods={"POST"})
      */
     public function addBookingForCertainSeat(BookingRepository $bookingRepository,
                                              UserRepository $userRepository,
@@ -111,10 +84,6 @@ class BookingController extends ApiController
                                              int $seatId
     ){
         try{
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $booking = $bookingRepository->findOneBy(['flightId'=>$flightId,'seat'=>$seatId]);
             if(!$booking){
                 return $this->respondValidationError('Booking not valid');
@@ -122,7 +91,8 @@ class BookingController extends ApiController
             if($booking->getStatus()!=Booking::STATUS_VACANT){
                 return $this->respondValidationError('Seat is already booked');
             }
-            $booking->setUser($this->user)->setStatus(Booking::STATUS_BOOKED);
+            $user = $this->getUser();
+            $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
             $errors = $validator->validate($booking);
             if(count($errors)>0) {
                 return $this->respondValidationError((string)$errors);
@@ -141,14 +111,10 @@ class BookingController extends ApiController
      * @param UserRepository $userRepository
      * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
-     * @Route("/cancel_booking/{id}", name="cancel_booking", methods={"POST"})
+     * @Route("/api/cancel_booking/{id}", name="booking_api_cancel_booking", methods={"POST"})
      */
     public function cancelBooking(BookingRepository $bookingRepository,UserRepository $userRepository,UserPasswordEncoderInterface $passwordEncoder, int $id){
         try {
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $booking = $bookingRepository->find($id);
             if(!$booking){
                 return $this->respondValidationError('Booking not valid');
@@ -157,7 +123,7 @@ class BookingController extends ApiController
                 if($booking->getUser()==null){
                     return $this->respondValidationError('Seat is not valid');
                 }
-                if ($booking->getUser()->getId() != $this->user->getId()) {
+                if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
             }else{
@@ -183,7 +149,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/buy_ticket/{flightId}", name="buy_ticket", methods={"POST"})
+     * @Route("/api/buy_ticket/{flightId}", name="booking_api_buy_ticket", methods={"POST"})
      */
     public function buyTicket(BookingRepository $bookingRepository,
                               UserRepository $userRepository,
@@ -192,16 +158,13 @@ class BookingController extends ApiController
                               int $flightId
     ){
         try {
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
             $booking = $bookingRepository->find($firstVacantSeatId);
             if (!$booking) {
                 return $this->respondValidationError('All seats are already booked');
             }
-            $booking->setUser($this->user)->setStatus(Booking::STATUS_BOUGHT);
+            $user = $this->getUser();
+            $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
             $errors = $validator->validate($booking);
             if (count($errors) > 0) {
                 return $this->respondValidationError((string)$errors);
@@ -224,7 +187,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/buy_ticket/{flightId}/{seatId}", name="buy_ticket_certain", methods={"POST"})
+     * @Route("/api/buy_ticket/{flightId}/{seatId}", name="booking_api_buy_ticket_certain", methods={"POST"})
      */
     public function buyTicketCertainSeat(BookingRepository $bookingRepository,
                                          UserRepository $userRepository,
@@ -234,10 +197,6 @@ class BookingController extends ApiController
                                          int $seatId
     ){
         try {
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $booking = $bookingRepository->findOneBy(['flightId'=>$flightId,'seat'=>$seatId]);
             if (!$booking) {
                 return $this->respondValidationError('Booking not valid');
@@ -246,14 +205,15 @@ class BookingController extends ApiController
                 if($booking->getUser()==null){
                     return $this->respondValidationError('Seat is not valid');
                 }
-                if ($booking->getUser()->getId() != $this->user->getId()) {
+                if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
             }
             if ($booking->getStatus() == Booking::STATUS_BOUGHT) {
                 return $this->respondValidationError('Ticket is already bought');
             }
-            $booking->setUser($this->user)->setStatus(Booking::STATUS_BOUGHT);
+            $user = $this->getUser();
+            $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
             $errors = $validator->validate($booking);
             if (count($errors) > 0) {
                 return $this->respondValidationError((string)$errors);
@@ -272,14 +232,10 @@ class BookingController extends ApiController
      * @param UserRepository $userRepository
      * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
-     * @Route("/cancel_ticket/{id}", name="cancel_ticket", methods={"POST"})
+     * @Route("/api/cancel_ticket/{id}", name="booking_api_cancel_ticket", methods={"POST"})
      */
     public function cancelTicket(BookingRepository $bookingRepository,UserRepository $userRepository,UserPasswordEncoderInterface $passwordEncoder, int $id){
         try {
-            $this->clientAuth($userRepository,$passwordEncoder);
-            if(!$this->validUser){
-                return $this->respondUnauthorized('You must authentificate to do this');
-            }
             $booking = $bookingRepository->find($id);
             if(!$booking){
                 return $this->respondValidationError('Ticket not valid');
@@ -288,7 +244,7 @@ class BookingController extends ApiController
                 if($booking->getUser()==null){
                     return $this->respondValidationError('Ticket is not valid');
                 }
-                if ($booking->getUser()->getId() != $this->user->getId()) {
+                if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
             }else{
@@ -310,7 +266,7 @@ class BookingController extends ApiController
      * @param BookingRepository $bookingRepository
      * @param MailService $mailService
      * @return JsonResponse
-     * @Route("/event", name="event", methods={"POST"})
+     * @Route("/api/event", name="booking_api_event", methods={"POST"})
      */
     public function getEvent(BookingRepository $bookingRepository, MailService $mailService){
         $request = Request::createFromGlobals();
