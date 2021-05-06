@@ -53,7 +53,7 @@ class BookingRepository extends ServiceEntityRepository
 
     public function getEmailsForFlight(int $flightId){
         $entityManager = $this->getEntityManager();
-        $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\User u join App\Entity\Booking b WHERE b.flightId=:flight');
+        $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\Booking b join b.user u WHERE b.flightId=:flight');
         $query->setParameter('flight',$flightId);
         $result = $query->getResult();
         return $result;

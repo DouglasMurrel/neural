@@ -266,7 +266,7 @@ class BookingController extends ApiController
      * @param BookingRepository $bookingRepository
      * @param MailService $mailService
      * @return JsonResponse
-     * @Route("/api/event", name="booking_api_event", methods={"POST"})
+     * @Route("/event", name="booking_api_event", methods={"POST"})
      */
     public function getEvent(BookingRepository $bookingRepository, MailService $mailService){
         $request = Request::createFromGlobals();

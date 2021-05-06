@@ -43,7 +43,7 @@ Authorization: Bearer <token>
 curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2MjAzMTcxNTYsImV4cCI6MTYyMDMyMDc1Niwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInVzZXJuYW1lIjoibXVycmVsQHlhbmRleC5ydSJ9.ZR3QsYH57sK8NxRn-UEOuLhyHT0o8d42W1wNFakW85vURaAC9n-XRTgl8Skm7bSRIuO-AiJSCLTpwHOlGoMqTLbES8DN-43s2bn8hkG_2iqFUZ8MTJO_HAGz47BJBRVoaHpeXhCuF648lmWg1nMgiNEDo9lzUT_SJJ-xVfSu9qQcApeYr1cqLITs1m8Sg7LrSk-qKWc5YQigAZgky4an-zPKC7v0R8C36l4eI22ZhNvsVjQs9cDh5IHP5phqCKK7jaHh60vkWMZWaE2j4XdBtaoZTpNVTvAicxIkjLxyiYrTBT2nmFDP1y6sPXIDkmzK1TWE_RdE17KqqgeH3UcTyA" http://localhost/api/booking/1
 ```
 
-Методы отличаются только адресом, на который отправляются.
+Методы отличаются только адресом, на который отправляются (за исключением пункта 7 - см. ниже).
 
 1. `/api/booking/{flightId}`
 
@@ -78,3 +78,14 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer eyJ0e
 В случае успеха возвращает объект `{"status":200,"success":id}`, где `id` - номер отмененного заказа в системе.
 
 Если при вызове любого метода API произошла ошибка, возвращается объект `{"status":<code>,"errors":<message>}`
+
+7. /event
+Это адрес для callback-ов. Ему не требуется авторизация в вышеописанном виде.
+   
+Вместо этого он принимает в теле запроса json-объект
+```
+{"data":{"flight_id":1,"triggered_at":1585012345,"event":"flight_ticket_sales_completed","secret_key":"a1b2c3d4e5f6a1b2c3d4e5f6"}}
+```
+Здесь значение `secret_key` должно совпадать с заранее прописанной константой.
+
+Значение `event` может быть `flight_ticket_sales_completed` (окончание продажи) или `flight_canceled` (отмена рейса)  
