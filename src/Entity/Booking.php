@@ -4,10 +4,12 @@ namespace App\Entity;
 
 use App\Repository\BookingRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=BookingRepository::class)
+ * @ORM\Table(uniqueConstraints={@ORM\UniqueConstraint(name="seat_flight", columns={"seat","flight_id"})})
  */
 class Booking
 {
@@ -25,7 +27,7 @@ class Booking
     private $id;
 
     /**
-     * @ORM\Column(type="integer", unique=true, options={"default"=0})
+     * @ORM\Column(type="integer", options={"default"=0})
      * @Assert\LessThanOrEqual(self::NUMBER_OF_SEATS)
      * @Assert\GreaterThanOrEqual(self::FIRST_SEAT)
      */
@@ -43,6 +45,11 @@ class Booking
      * @ORM\JoinColumn
      */
     private $user;
+
+    /**
+     * @ORM\Column(type="integer", options={"default"=0})
+     */
+    private $flightId;
 
     public function getId(): ?int
     {
@@ -81,6 +88,18 @@ class Booking
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getFlightId(): ?int
+    {
+        return $this->flightId;
+    }
+
+    public function setFlightId(int $flightId): self
+    {
+        $this->flightId = $flightId;
 
         return $this;
     }
