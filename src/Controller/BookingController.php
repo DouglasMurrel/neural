@@ -127,10 +127,13 @@ class BookingController extends ApiController
                 return $this->respondUnauthorized('You must authentificate to do this');
             }
             $booking = $bookingRepository->find($id);
+            if(!$booking){
+                return $this->respondValidationError('Booking not valid');
+            }
             if($booking->getUser()->getId()!=$this->user->getId()){
                 return $this->respondUnauthorized('You must authentificate to do this');
             }
-            $booking->setStatus(Booking::STATUS_VACANT);
+            $booking->setStatus(Booking::STATUS_VACANT)->setUser(null);
             $booking = $bookingRepository->save($booking);
             return $this->respondWithSuccess($booking->getId());
         }catch(\Exception $e) {
@@ -221,10 +224,13 @@ class BookingController extends ApiController
                 return $this->respondUnauthorized('You must authentificate to do this');
             }
             $booking = $bookingRepository->find($id);
+            if(!$booking){
+                return $this->respondValidationError('Booking not valid');
+            }
             if($booking->getUser()->getId()!=$this->user->getId()){
                 return $this->respondUnauthorized('You must authentificate to do this');
             }
-            $booking->setStatus(Booking::STATUS_VACANT);
+            $booking->setStatus(Booking::STATUS_VACANT)->setUser(null);
             $booking = $bookingRepository->save($booking);
             return $this->respondWithSuccess($booking->getId());
         }catch(\Exception $e) {
