@@ -19,15 +19,19 @@ class BookingRepository extends ServiceEntityRepository
         parent::__construct($registry, Booking::class);
     }
 
+
     /**
-     * @return mixed
+     * @param int $flightId
+     * @return int
      */
-    public function getFirstVacantSeat(){
+    public function getFirstVacantSeat(int $flightId){
         $entityManager = $this->getEntityManager();
-        $query = $entityManager->createQuery('SELECT b FROM App\Entity\Booking b WHERE b.status='.Booking::STATUS_VACANT);
+        $query = $entityManager->createQuery('SELECT b FROM App\Entity\Booking b WHERE b.flightId=:flight and b.status=:status');
+        $query->setParameter('flight',$flightId);
+        $query->setParameter('status',Booking::STATUS_VACANT);
         $result = $query->getResult();
         if(count($result)>0) {
-            return intval($result[0]->getId());
+            return $result[0]->getId();
         }else{
             return -1;
         }
@@ -45,6 +49,14 @@ class BookingRepository extends ServiceEntityRepository
         if($isNew)$entityManager->persist($booking);
         $entityManager->flush();
         return $booking;
+    }
+
+    public function getEmailsForFlight(int $flightId){
+        $entityManager = $this->getEntityManager();
+        $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\User u join App\Entity\Booking b WHERE b.flightId=:flight');
+        $query->setParameter('flight',$flightId);
+        $result = $query->getResult();
+        return $result;
     }
 
     // /**
