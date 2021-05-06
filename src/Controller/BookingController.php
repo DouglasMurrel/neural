@@ -5,18 +5,15 @@ namespace App\Controller;
 
 
 use App\Entity\Booking;
-use App\Entity\User;
 use App\Event\FlightCanceledEvent;
 use App\Event\TicketsSoldEvent;
 use App\Repository\BookingRepository;
-use App\Repository\UserRepository;
 use App\Service\MailService;
 use App\Subscriber\FlightEventSubscriber;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -30,18 +27,14 @@ class BookingController extends ApiController
     /**
      * Бронирует билет на первое свободное место данного рейса
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
      * @param ValidatorInterface $validator
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/api/booking/{flightId}", name="booking_api_book_add", methods={"POST"})
      */
     public function addBooking(BookingRepository $bookingRepository,
-                               UserRepository $userRepository,
                                ValidatorInterface $validator,
-                               UserPasswordEncoderInterface $passwordEncoder,
                                int $flightId
     ){
         try {
@@ -67,9 +60,7 @@ class BookingController extends ApiController
     /**
      * Бронирует билет на определенное место данного рейса
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
      * @param ValidatorInterface $validator
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
@@ -77,9 +68,7 @@ class BookingController extends ApiController
      * @Route("/api/booking/{flightId}/{seatId}", name="booking_api_book_add_certain", methods={"POST"})
      */
     public function addBookingForCertainSeat(BookingRepository $bookingRepository,
-                                             UserRepository $userRepository,
                                              ValidatorInterface $validator,
-                                             UserPasswordEncoderInterface $passwordEncoder,
                                              int $flightId,
                                              int $seatId
     ){
@@ -108,12 +97,10 @@ class BookingController extends ApiController
     /**
      * Отменяет бронирование с данным $id
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
      * @Route("/api/cancel_booking/{id}", name="booking_api_cancel_booking", methods={"POST"})
      */
-    public function cancelBooking(BookingRepository $bookingRepository,UserRepository $userRepository,UserPasswordEncoderInterface $passwordEncoder, int $id){
+    public function cancelBooking(BookingRepository $bookingRepository, int $id){
         try {
             $booking = $bookingRepository->find($id);
             if(!$booking){
@@ -143,18 +130,14 @@ class BookingController extends ApiController
     /**
      * Покупает билет на первое свободное место данного рейса
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
      * @param ValidatorInterface $validator
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/api/buy_ticket/{flightId}", name="booking_api_buy_ticket", methods={"POST"})
      */
     public function buyTicket(BookingRepository $bookingRepository,
-                              UserRepository $userRepository,
                               ValidatorInterface $validator,
-                              UserPasswordEncoderInterface $passwordEncoder,
                               int $flightId
     ){
         try {
@@ -180,9 +163,7 @@ class BookingController extends ApiController
     /**
      * Покупает билет на определенное место данного рейса
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
      * @param ValidatorInterface $validator
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
@@ -190,9 +171,7 @@ class BookingController extends ApiController
      * @Route("/api/buy_ticket/{flightId}/{seatId}", name="booking_api_buy_ticket_certain", methods={"POST"})
      */
     public function buyTicketCertainSeat(BookingRepository $bookingRepository,
-                                         UserRepository $userRepository,
                                          ValidatorInterface $validator,
-                                         UserPasswordEncoderInterface $passwordEncoder,
                                          int $flightId,
                                          int $seatId
     ){
@@ -229,12 +208,10 @@ class BookingController extends ApiController
     /**
      * Отменяет покупку билета с данным id
      * @param BookingRepository $bookingRepository
-     * @param UserRepository $userRepository
-     * @param UserPasswordEncoderInterface $passwordEncoder
      * @param int $id
      * @Route("/api/cancel_ticket/{id}", name="booking_api_cancel_ticket", methods={"POST"})
      */
-    public function cancelTicket(BookingRepository $bookingRepository,UserRepository $userRepository,UserPasswordEncoderInterface $passwordEncoder, int $id){
+    public function cancelTicket(BookingRepository $bookingRepository, int $id){
         try {
             $booking = $bookingRepository->find($id);
             if(!$booking){
