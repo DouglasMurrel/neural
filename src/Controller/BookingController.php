@@ -21,6 +21,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * Class BookingController
  * @package App\Controller
+ * @Route("/api", name="booking_api_")
  */
 class BookingController extends ApiController
 {
@@ -33,7 +34,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/api/booking/{flightId}", name="booking_api_book_add", methods={"POST"})
+     * @Route("/booking/{flightId}", name="book_add", methods={"POST"})
      */
     public function addBooking(BookingRepository $bookingRepository,
                                ValidatorInterface $validator,
@@ -70,7 +71,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/api/booking/{flightId}/{seatId}", name="booking_api_book_add_certain", methods={"POST"})
+     * @Route("/booking/{flightId}/{seatId}", name="book_add_certain", methods={"POST"})
      */
     public function addBookingForCertainSeat(BookingRepository $bookingRepository,
                                              ValidatorInterface $validator,
@@ -103,7 +104,7 @@ class BookingController extends ApiController
      * Отменяет бронирование с данным $id
      * @param BookingRepository $bookingRepository
      * @param int $id
-     * @Route("/api/cancel_booking/{id}", name="booking_api_cancel_booking", methods={"POST"})
+     * @Route("/cancel_booking/{id}", name="cancel_booking", methods={"POST"})
      */
     public function cancelBooking(BookingRepository $bookingRepository, int $id){
         try {
@@ -139,7 +140,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/api/buy_ticket/{flightId}", name="booking_api_buy_ticket", methods={"POST"})
+     * @Route("/buy_ticket/{flightId}", name="buy_ticket", methods={"POST"})
      */
     public function buyTicket(BookingRepository $bookingRepository,
                               ValidatorInterface $validator,
@@ -176,7 +177,7 @@ class BookingController extends ApiController
      * @return JsonResponse
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
-     * @Route("/api/buy_ticket/{flightId}/{seatId}", name="booking_api_buy_ticket_certain", methods={"POST"})
+     * @Route("/buy_ticket/{flightId}/{seatId}", name="buy_ticket_certain", methods={"POST"})
      */
     public function buyTicketCertainSeat(BookingRepository $bookingRepository,
                                          ValidatorInterface $validator,
@@ -217,7 +218,7 @@ class BookingController extends ApiController
      * Отменяет покупку билета с данным id
      * @param BookingRepository $bookingRepository
      * @param int $id
-     * @Route("/api/cancel_ticket/{id}", name="booking_api_cancel_ticket", methods={"POST"})
+     * @Route("/cancel_ticket/{id}", name="cancel_ticket", methods={"POST"})
      */
     public function cancelTicket(BookingRepository $bookingRepository, int $id){
         try {
@@ -251,7 +252,7 @@ class BookingController extends ApiController
      * @param BookingRepository $bookingRepository
      * @param MailService $mailService
      * @return JsonResponse
-     * @Route("/api/event", name="booking_api_event", methods={"POST"})
+     * @Route("/event", name="event", methods={"POST"})
      */
     public function getEvent(BookingRepository $bookingRepository, MailService $mailService){
         $request = Request::createFromGlobals();
