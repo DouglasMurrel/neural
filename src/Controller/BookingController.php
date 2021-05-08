@@ -10,6 +10,7 @@ use App\Event\TicketsSoldEvent;
 use App\Repository\BookingRepository;
 use App\Service\MailService;
 use App\Subscriber\FlightEventSubscriber;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -42,8 +43,13 @@ class BookingController extends ApiController
         try {
             $user = $this->getUser();
             return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
-                $booking = $bookingRepository->find($firstVacantSeatId);
+                $lockedFlag = true;
+                while($lockedFlag) {
+                    $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
+                    $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
+                    if(!$booking)break;
+                    if($booking->getStatus()==Booking::STATUS_VACANT)$lockedFlag = false;
+                }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
                 }
@@ -148,8 +154,13 @@ class BookingController extends ApiController
         $user = $this->getUser();
         try {
             return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
-                $booking = $bookingRepository->find($firstVacantSeatId);
+                $lockedFlag = true;
+                while($lockedFlag) {
+                    $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
+                    $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
+                    if(!$booking)break;
+                    if($booking->getStatus()==Booking::STATUS_VACANT)$lockedFlag = false;
+                }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
                 }

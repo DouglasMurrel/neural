@@ -30,10 +30,11 @@ class BookingRepository extends ServiceEntityRepository
         $query = $entityManager->createQuery('SELECT b FROM App\Entity\Booking b WHERE b.flightId=:flight and b.status=:status');
         $query->setParameter('flight',$flightId);
         $query->setParameter('status',Booking::STATUS_VACANT);
-        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $result = $query->getResult();
-        if(count($result)>0) {
-            return $result[0]->getId();
+        $count = count($result);
+        if($count>0) {
+            $c = rand(0,$count-1);
+            return $result[$c]->getId();
         }else{
             return -1;
         }
