@@ -10,7 +10,6 @@ use App\Event\TicketsSoldEvent;
 use App\Repository\BookingRepository;
 use App\Service\MailService;
 use App\Subscriber\FlightEventSubscriber;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,7 +24,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 class BookingController extends ApiController
 {
-    const SECRET_KEY = 'a1b2c3d4e5f6a1b2c3d4e5f6';
 
     /**
      * Бронирует билет на первое свободное место данного рейса
@@ -257,7 +255,7 @@ class BookingController extends ApiController
     public function getEvent(BookingRepository $bookingRepository, MailService $mailService){
         $request = Request::createFromGlobals();
         $request = $this->transformJsonBody($request)->get('data');
-        if($request['secret_key']!=self::SECRET_KEY){
+        if($request['secret_key']!=$this->getParameter('secret_api_key')){
             return $this->respondUnauthorized('Wrong authorization key');
         }
         $flightId = $request['flight_id'];
