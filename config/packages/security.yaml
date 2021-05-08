@@ -12,7 +12,7 @@ security:
     firewalls:
         event:
             pattern: ^/api/event
-            security: false
+            anonymous: true
         login:
             pattern: ^/api/login
             stateless: true
