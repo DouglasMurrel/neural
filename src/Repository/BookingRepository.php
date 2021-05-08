@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Booking;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -55,6 +56,7 @@ class BookingRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
         $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\Booking b join b.user u WHERE b.flightId=:flight');
         $query->setParameter('flight',$flightId);
+        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $result = $query->getResult();
         return $result;
     }

@@ -10,6 +10,8 @@ use App\Event\TicketsSoldEvent;
 use App\Repository\BookingRepository;
 use App\Service\MailService;
 use App\Subscriber\FlightEventSubscriber;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,23 +37,26 @@ class BookingController extends ApiController
      */
     public function addBooking(BookingRepository $bookingRepository,
                                ValidatorInterface $validator,
+                               EntityManagerInterface $em,
                                int $flightId
     ){
         try {
-            $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
-            $booking = $bookingRepository->find($firstVacantSeatId);
-            if (!$booking) {
-                return $this->respondValidationError('All seats are already booked');
-            }
             $user = $this->getUser();
-            $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
-            $errors = $validator->validate($booking);
-            if (count($errors) > 0) {
-                return $this->respondValidationError((string)$errors);
-            } else {
-                $booking = $bookingRepository->save($booking);
-                return $this->respondWithSuccess($booking->getId());
-            }
+            return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
+                $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
+                $booking = $bookingRepository->find($firstVacantSeatId);
+                if (!$booking) {
+                    return $this->respondValidationError('All seats are already booked');
+                }
+                $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
+                $errors = $validator->validate($booking);
+                if (count($errors) > 0) {
+                    return $this->respondValidationError((string)$errors);
+                } else {
+                    $booking = $bookingRepository->save($booking);
+                    return $this->respondWithSuccess($booking->getId());
+                }
+            });
         }catch(\Exception $e) {
             return $this->respondValidationError('Something went wrong: '.$e->getMessage());
         }
@@ -138,23 +143,26 @@ class BookingController extends ApiController
      */
     public function buyTicket(BookingRepository $bookingRepository,
                               ValidatorInterface $validator,
+                              EntityManagerInterface $em,
                               int $flightId
     ){
+        $user = $this->getUser();
         try {
-            $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
-            $booking = $bookingRepository->find($firstVacantSeatId);
-            if (!$booking) {
-                return $this->respondValidationError('All seats are already booked');
-            }
-            $user = $this->getUser();
-            $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
-            $errors = $validator->validate($booking);
-            if (count($errors) > 0) {
-                return $this->respondValidationError((string)$errors);
-            } else {
-                $booking = $bookingRepository->save($booking);
-                return $this->respondWithSuccess($booking->getId());
-            }
+            return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
+                $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
+                $booking = $bookingRepository->find($firstVacantSeatId);
+                if (!$booking) {
+                    return $this->respondValidationError('All seats are already booked');
+                }
+                $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
+                $errors = $validator->validate($booking);
+                if (count($errors) > 0) {
+                    return $this->respondValidationError((string)$errors);
+                } else {
+                    $booking = $bookingRepository->save($booking);
+                    return $this->respondWithSuccess($booking->getId());
+                }
+            });
         }catch(\Exception $e) {
             return $this->respondValidationError('Something went wrong: '.$e->getMessage());
         }
