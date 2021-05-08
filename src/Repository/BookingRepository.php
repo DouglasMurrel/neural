@@ -30,6 +30,7 @@ class BookingRepository extends ServiceEntityRepository
         $query = $entityManager->createQuery('SELECT b FROM App\Entity\Booking b WHERE b.flightId=:flight and b.status=:status');
         $query->setParameter('flight',$flightId);
         $query->setParameter('status',Booking::STATUS_VACANT);
+        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $result = $query->getResult();
         if(count($result)>0) {
             return $result[0]->getId();
@@ -56,7 +57,6 @@ class BookingRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
         $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\Booking b join b.user u WHERE b.flightId=:flight');
         $query->setParameter('flight',$flightId);
-        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $result = $query->getResult();
         return $result;
     }
