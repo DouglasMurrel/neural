@@ -43,12 +43,11 @@ class BookingController extends ApiController
         try {
             $user = $this->getUser();
             return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                $lockedFlag = true;
-                while($lockedFlag) {
+                while(true) {
                     $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
                     $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
                     if(!$booking)break;
-                    if($booking->getStatus()==Booking::STATUS_VACANT)$lockedFlag = false;
+                    if($booking->getStatus()==Booking::STATUS_VACANT)break;
                 }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
@@ -154,12 +153,11 @@ class BookingController extends ApiController
         $user = $this->getUser();
         try {
             return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                $lockedFlag = true;
-                while($lockedFlag) {
+                while(true) {
                     $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
                     $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
                     if(!$booking)break;
-                    if($booking->getStatus()==Booking::STATUS_VACANT)$lockedFlag = false;
+                    if($booking->getStatus()==Booking::STATUS_VACANT)break;
                 }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
