@@ -1,8 +1,6 @@
 <?php
 
-
 namespace App\Subscriber;
-
 
 use App\Event\FlightCanceledEvent;
 use App\Event\TicketsSoldEvent;
@@ -12,11 +10,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class FlightEventSubscriber implements EventSubscriberInterface
 {
-
     private $bookingRepository;
     private $mailService;
 
-    public function __construct(BookingRepository $bookingRepository,MailService $mailService){
+    public function __construct(BookingRepository $bookingRepository, MailService $mailService)
+    {
         $this->bookingRepository = $bookingRepository;
         $this->mailService = $mailService;
     }
@@ -35,19 +33,19 @@ class FlightEventSubscriber implements EventSubscriberInterface
     /**
      * Send emails for subscribers
      */
-    public function sendCancelationInfo(FlightCanceledEvent $event){
+    public function sendCancelationInfo(FlightCanceledEvent $event)
+    {
         $emailList = $this->bookingRepository->getEmailsForFlight($event->getFlightId());
         foreach ($emailList as $emailArray) {
             $email = $emailArray['email'];
-            $this->mailService->send($email,'Filght cancelation','Flight number '.$event->getFlightId().' has been canceled.');
+            $this->mailService->send($email, 'Filght cancelation', 'Flight number ' . $event->getFlightId() . ' has been canceled.');
         }
     }
 
     /**
      * For now do nothing
      */
-    public function sendSoldInfo(TicketsSoldEvent $event){
-
+    public function sendSoldInfo(TicketsSoldEvent $event)
+    {
     }
-
 }

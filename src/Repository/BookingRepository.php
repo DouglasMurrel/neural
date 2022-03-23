@@ -20,45 +20,50 @@ class BookingRepository extends ServiceEntityRepository
         parent::__construct($registry, Booking::class);
     }
 
-
     /**
-     * @param int $flightId
      * @return int
      */
-    public function getFirstVacantSeat(int $flightId){
+    public function getFirstVacantSeat(int $flightId)
+    {
         $entityManager = $this->getEntityManager();
         $query = $entityManager->createQuery('SELECT b FROM App\Entity\Booking b WHERE b.flightId=:flight and b.status=:status');
-        $query->setParameter('flight',$flightId);
-        $query->setParameter('status',Booking::STATUS_VACANT);
+        $query->setParameter('flight', $flightId);
+        $query->setParameter('status', Booking::STATUS_VACANT);
         $result = $query->getResult();
         $count = count($result);
-        if($count>0) {
-            $c = rand(0,$count-1);
+        if ($count > 0) {
+            $c = rand(0, $count - 1);
+
             return $result[$c]->getId();
-        }else{
+        } else {
             return -1;
         }
     }
 
     /**
-     * @param Booking $booking
-     * @param bool $isNew
      * @return Booking
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function save(Booking $booking, bool $isNew=false){
+    public function save(Booking $booking, bool $isNew = false)
+    {
         $entityManager = $this->getEntityManager();
-        if($isNew)$entityManager->persist($booking);
+        if ($isNew) {
+            $entityManager->persist($booking);
+        }
         $entityManager->flush();
+
         return $booking;
     }
 
-    public function getEmailsForFlight(int $flightId){
+    public function getEmailsForFlight(int $flightId)
+    {
         $entityManager = $this->getEntityManager();
         $query = $entityManager->createQuery('SELECT DISTINCT u.email FROM App\Entity\Booking b join b.user u WHERE b.flightId=:flight');
-        $query->setParameter('flight',$flightId);
+        $query->setParameter('flight', $flightId);
         $result = $query->getResult();
+
         return $result;
     }
 

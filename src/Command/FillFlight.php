@@ -1,8 +1,6 @@
 <?php
 
-
 namespace App\Command;
-
 
 use App\Entity\Booking;
 use App\Repository\BookingRepository;
@@ -32,14 +30,15 @@ class FillFlight extends Command
         parent::__construct();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output){
-        for($i = Booking::FIRST_SEAT;$i<=Booking::NUMBER_OF_SEATS;$i++){
-            $flight = intval($input->getArgument('flight'));
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        for ($i = Booking::FIRST_SEAT; $i <= Booking::NUMBER_OF_SEATS; ++$i) {
+            $flight = (int) ($input->getArgument('flight'));
             $booking = new Booking();
             $booking->setFlightId($flight)->setSeat($i)->setStatus(Booking::STATUS_VACANT);
             $this->repository->save($booking, true);
         }
+
         return Command::SUCCESS;
     }
-
 }

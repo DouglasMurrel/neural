@@ -13,9 +13,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ApiController extends AbstractController
 {
-
     /**
-     * @var integer HTTP status code - 200 (OK) by default
+     * @var int HTTP status code - 200 (OK) by default
      */
     protected $statusCode = 200;
 
@@ -32,7 +31,7 @@ class ApiController extends AbstractController
     /**
      * Sets the value of statusCode.
      *
-     * @param integer $statusCode the status code
+     * @param int $statusCode the status code
      *
      * @return self
      */
@@ -61,6 +60,7 @@ class ApiController extends AbstractController
      *
      * @param string $errors
      * @param $headers
+     *
      * @return JsonResponse
      */
     public function respondWithErrors($errors, $headers = [])
@@ -73,12 +73,12 @@ class ApiController extends AbstractController
         return new JsonResponse($data, $this->getStatusCode(), $headers);
     }
 
-
     /**
      * Sets an error message and returns a JSON response
      *
      * @param string $success
      * @param $headers
+     *
      * @return JsonResponse
      */
     public function respondWithSuccess($success, $headers = [])
@@ -90,7 +90,6 @@ class ApiController extends AbstractController
 
         return new JsonResponse($data, $this->getStatusCode(), $headers);
     }
-
 
     /**
      * Returns a 401 Unauthorized http response
@@ -147,7 +146,7 @@ class ApiController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if ($data === null) {
+        if (null === $data) {
             return $request;
         }
 
@@ -155,6 +154,4 @@ class ApiController extends AbstractController
 
         return $request;
     }
-
-
 }

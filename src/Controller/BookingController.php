@@ -1,8 +1,6 @@
 <?php
 
-
 namespace App\Controller;
-
 
 use App\Entity\Booking;
 use App\Event\FlightCanceledEvent;
@@ -20,17 +18,16 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Class BookingController
- * @package App\Controller
+ *
  * @Route("/api", name="booking_api_")
  */
 class BookingController extends ApiController
 {
-
     /**
      * Бронирует билет на первое свободное место данного рейса
-     * @param BookingRepository $bookingRepository
-     * @param ValidatorInterface $validator
+     *
      * @return JsonResponse
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/booking/{flightId}", name="book_add", methods={"POST"})
@@ -39,15 +36,20 @@ class BookingController extends ApiController
                                ValidatorInterface $validator,
                                EntityManagerInterface $em,
                                int $flightId
-    ){
+    ) {
         try {
             $user = $this->getUser();
-            return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                while(true) {
+
+            return $em->transactional(function () use ($bookingRepository,$validator,$flightId, $user) {
+                while (true) {
                     $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
                     $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
-                    if(!$booking)break;
-                    if($booking->getStatus()==Booking::STATUS_VACANT)break;
+                    if (!$booking) {
+                        break;
+                    }
+                    if (Booking::STATUS_VACANT == $booking->getStatus()) {
+                        break;
+                    }
                 }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
@@ -55,23 +57,25 @@ class BookingController extends ApiController
                 $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
                 $errors = $validator->validate($booking);
                 if (count($errors) > 0) {
-                    return $this->respondValidationError((string)$errors);
+                    return $this->respondValidationError((string) $errors);
                 } else {
                     $booking = $bookingRepository->save($booking);
+
                     return $this->respondWithSuccess($booking->getId());
                 }
             });
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
     /**
      * Бронирует билет на определенное место данного рейса
-     * @param BookingRepository $bookingRepository
-     * @param ValidatorInterface $validator
+     *
      * @param int $id
+     *
      * @return JsonResponse
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/booking/{flightId}/{seatId}", name="book_add_certain", methods={"POST"})
@@ -80,67 +84,69 @@ class BookingController extends ApiController
                                              ValidatorInterface $validator,
                                              int $flightId,
                                              int $seatId
-    ){
-        try{
-            $booking = $bookingRepository->findOneBy(['flightId'=>$flightId,'seat'=>$seatId]);
-            if(!$booking){
+    ) {
+        try {
+            $booking = $bookingRepository->findOneBy(['flightId' => $flightId, 'seat' => $seatId]);
+            if (!$booking) {
                 return $this->respondValidationError('Booking not valid');
             }
-            if($booking->getStatus()!=Booking::STATUS_VACANT){
+            if (Booking::STATUS_VACANT != $booking->getStatus()) {
                 return $this->respondValidationError('Seat is already booked');
             }
             $user = $this->getUser();
             $booking->setUser($user)->setStatus(Booking::STATUS_BOOKED);
             $errors = $validator->validate($booking);
-            if(count($errors)>0) {
-                return $this->respondValidationError((string)$errors);
-            }else{
+            if (count($errors) > 0) {
+                return $this->respondValidationError((string) $errors);
+            } else {
                 $booking = $bookingRepository->save($booking);
+
                 return $this->respondWithSuccess($booking->getId());
             }
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
     /**
      * Отменяет бронирование с данным $id
-     * @param BookingRepository $bookingRepository
-     * @param int $id
+     *
      * @Route("/cancel_booking/{id}", name="cancel_booking", methods={"POST"})
      */
-    public function cancelBooking(BookingRepository $bookingRepository, int $id){
+    public function cancelBooking(BookingRepository $bookingRepository, int $id)
+    {
         try {
             $booking = $bookingRepository->find($id);
-            if(!$booking){
+            if (!$booking) {
                 return $this->respondValidationError('Booking not valid');
             }
-            if($booking->getStatus()==Booking::STATUS_BOOKED) {
-                if($booking->getUser()==null){
+            if (Booking::STATUS_BOOKED == $booking->getStatus()) {
+                if (null == $booking->getUser()) {
                     return $this->respondValidationError('Seat is not valid');
                 }
                 if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
-            }else{
+            } else {
                 return $this->respondValidationError('Seat is not booked');
             }
-            if($booking->getStatus()!=Booking::STATUS_BOOKED){
+            if (Booking::STATUS_BOOKED != $booking->getStatus()) {
                 return $this->respondValidationError('Seat is not booked');
             }
             $booking->setStatus(Booking::STATUS_VACANT)->setUser(null);
             $booking = $bookingRepository->save($booking);
+
             return $this->respondWithSuccess($booking->getId());
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
     /**
      * Покупает билет на первое свободное место данного рейса
-     * @param BookingRepository $bookingRepository
-     * @param ValidatorInterface $validator
+     *
      * @return JsonResponse
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/buy_ticket/{flightId}", name="buy_ticket", methods={"POST"})
@@ -149,15 +155,19 @@ class BookingController extends ApiController
                               ValidatorInterface $validator,
                               EntityManagerInterface $em,
                               int $flightId
-    ){
+    ) {
         $user = $this->getUser();
         try {
-            return $em->transactional(function() use ($bookingRepository,$validator,$flightId, $user) {
-                while(true) {
+            return $em->transactional(function () use ($bookingRepository,$validator,$flightId, $user) {
+                while (true) {
                     $firstVacantSeatId = $bookingRepository->getFirstVacantSeat($flightId);
                     $booking = $bookingRepository->find($firstVacantSeatId, LockMode::PESSIMISTIC_WRITE);
-                    if(!$booking)break;
-                    if($booking->getStatus()==Booking::STATUS_VACANT)break;
+                    if (!$booking) {
+                        break;
+                    }
+                    if (Booking::STATUS_VACANT == $booking->getStatus()) {
+                        break;
+                    }
                 }
                 if (!$booking) {
                     return $this->respondValidationError('All seats are already booked');
@@ -165,23 +175,25 @@ class BookingController extends ApiController
                 $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
                 $errors = $validator->validate($booking);
                 if (count($errors) > 0) {
-                    return $this->respondValidationError((string)$errors);
+                    return $this->respondValidationError((string) $errors);
                 } else {
                     $booking = $bookingRepository->save($booking);
+
                     return $this->respondWithSuccess($booking->getId());
                 }
             });
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
     /**
      * Покупает билет на определенное место данного рейса
-     * @param BookingRepository $bookingRepository
-     * @param ValidatorInterface $validator
+     *
      * @param int $id
+     *
      * @return JsonResponse
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @Route("/buy_ticket/{flightId}/{seatId}", name="buy_ticket_certain", methods={"POST"})
@@ -190,81 +202,81 @@ class BookingController extends ApiController
                                          ValidatorInterface $validator,
                                          int $flightId,
                                          int $seatId
-    ){
+    ) {
         try {
-            $booking = $bookingRepository->findOneBy(['flightId'=>$flightId,'seat'=>$seatId]);
+            $booking = $bookingRepository->findOneBy(['flightId' => $flightId, 'seat' => $seatId]);
             if (!$booking) {
                 return $this->respondValidationError('Booking not valid');
             }
-            if($booking->getStatus()==Booking::STATUS_BOOKED) {
-                if($booking->getUser()==null){
+            if (Booking::STATUS_BOOKED == $booking->getStatus()) {
+                if (null == $booking->getUser()) {
                     return $this->respondValidationError('Seat is not valid');
                 }
                 if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
             }
-            if ($booking->getStatus() == Booking::STATUS_BOUGHT) {
+            if (Booking::STATUS_BOUGHT == $booking->getStatus()) {
                 return $this->respondValidationError('Ticket is already bought');
             }
             $user = $this->getUser();
             $booking->setUser($user)->setStatus(Booking::STATUS_BOUGHT);
             $errors = $validator->validate($booking);
             if (count($errors) > 0) {
-                return $this->respondValidationError((string)$errors);
+                return $this->respondValidationError((string) $errors);
             } else {
                 $booking = $bookingRepository->save($booking);
+
                 return $this->respondWithSuccess($booking->getId());
             }
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
     /**
      * Отменяет покупку билета с данным id
-     * @param BookingRepository $bookingRepository
-     * @param int $id
+     *
      * @Route("/cancel_ticket/{id}", name="cancel_ticket", methods={"POST"})
      */
-    public function cancelTicket(BookingRepository $bookingRepository, int $id){
+    public function cancelTicket(BookingRepository $bookingRepository, int $id)
+    {
         try {
             $booking = $bookingRepository->find($id);
-            if(!$booking){
+            if (!$booking) {
                 return $this->respondValidationError('Ticket not valid');
             }
-            if($booking->getStatus()==Booking::STATUS_BOUGHT) {
-                if($booking->getUser()==null){
+            if (Booking::STATUS_BOUGHT == $booking->getStatus()) {
+                if (null == $booking->getUser()) {
                     return $this->respondValidationError('Ticket is not valid');
                 }
                 if ($booking->getUser()->getId() != $this->getUser()->getId()) {
                     return $this->respondUnauthorized('You must authentificate to do this');
                 }
-            }else{
+            } else {
                 return $this->respondValidationError('Ticket is not bought');
             }
-            if($booking->getStatus()!=Booking::STATUS_BOUGHT){
+            if (Booking::STATUS_BOUGHT != $booking->getStatus()) {
                 return $this->respondValidationError('Ticket is not bought');
             }
             $booking->setStatus(Booking::STATUS_VACANT)->setUser(null);
             $booking = $bookingRepository->save($booking);
+
             return $this->respondWithSuccess($booking->getId());
-        }catch(\Exception $e) {
-            return $this->respondValidationError('Something went wrong: '.$e->getMessage());
+        } catch (\Exception $e) {
+            return $this->respondValidationError('Something went wrong: ' . $e->getMessage());
         }
     }
 
-
     /**
-     * @param BookingRepository $bookingRepository
-     * @param MailService $mailService
      * @return JsonResponse
      * @Route("/event", name="event", methods={"POST"})
      */
-    public function getEvent(BookingRepository $bookingRepository, MailService $mailService){
+    public function getEvent(BookingRepository $bookingRepository, MailService $mailService)
+    {
         $request = Request::createFromGlobals();
         $request = $this->transformJsonBody($request)->get('data');
-        if($request['secret_key']!=$this->getParameter('secret_api_key')){
+        if ($request['secret_key'] != $this->getParameter('secret_api_key')) {
             return $this->respondUnauthorized('Wrong authorization key');
         }
         $flightId = $request['flight_id'];
@@ -272,16 +284,17 @@ class BookingController extends ApiController
         $dispatcher = new EventDispatcher();
         $subscriber = new FlightEventSubscriber($bookingRepository, $mailService);
         $dispatcher->addSubscriber($subscriber);
-        if($eventType=='flight_ticket_sales_completed'){
+        if ('flight_ticket_sales_completed' == $eventType) {
             $event = new TicketsSoldEvent($flightId);
             $eventName = TicketsSoldEvent::NAME;
-            $dispatcher->dispatch($event,$eventName);
+            $dispatcher->dispatch($event, $eventName);
         }
-        if($eventType=='flight_canceled'){
+        if ('flight_canceled' == $eventType) {
             $event = new FlightCanceledEvent($flightId);
             $eventName = FlightCanceledEvent::NAME;
-            $dispatcher->dispatch($event,$eventName);
+            $dispatcher->dispatch($event, $eventName);
         }
+
         return $this->respondWithSuccess('Message received');
     }
 }

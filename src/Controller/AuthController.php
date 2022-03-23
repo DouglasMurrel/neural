@@ -1,23 +1,16 @@
 <?php
 
-
 namespace App\Controller;
 
-
 use App\Entity\User;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
 
 class AuthController extends ApiController
 {
-
     /**
-     * @param Request $request
-     * @param UserPasswordEncoderInterface $encoder
      * @return JsonResponse
      * @Route("/register", name="register", methods={"POST"})
      */
@@ -28,17 +21,16 @@ class AuthController extends ApiController
         $password = $request->get('password');
         $email = $request->get('email');
 
-        if (empty($password) || empty($email)){
-            return $this->respondValidationError("Invalid Email or Password");
+        if (empty($password) || empty($email)) {
+            return $this->respondValidationError('Invalid Email or Password');
         }
-
 
         $user = new User();
         $user->setPassword($encoder->encodePassword($user, $password));
         $user->setEmail($email);
         $em->persist($user);
         $em->flush();
+
         return $this->respondWithSuccess(sprintf('User %s successfully created', $user->getUsername()));
     }
-
 }
